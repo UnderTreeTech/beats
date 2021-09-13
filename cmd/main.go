@@ -1,28 +1,17 @@
 package main
 
 import (
-	"context"
 	"flag"
 	"fmt"
+	"github.com/UnderTreeTech/waterdrop/pkg/log"
 	"os"
 	"os/signal"
 	"syscall"
-	"time"
-
-	"github.com/UnderTreeTech/waterdrop/pkg/log"
 
 	"beats/internal/dao"
-	"beats/internal/server/grpc"
-	"beats/internal/server/http"
 	"beats/internal/service"
 
 	"github.com/UnderTreeTech/waterdrop/pkg/stats"
-
-	"github.com/UnderTreeTech/waterdrop/pkg/trace/jaeger"
-
-	"google.golang.org/grpc/resolver"
-
-	"github.com/UnderTreeTech/waterdrop/pkg/registry/etcd"
 
 	"github.com/UnderTreeTech/waterdrop/pkg/conf"
 )
@@ -41,35 +30,13 @@ func main() {
 	}
 	defer log.New(logCfg).Sync()
 
-	// you can commnet this line, then it will use default mock trace
-	defer jaeger.Init()()
-
-	etcdCfg := &etcd.Config{}
-	if err := conf.Unmarshal("etcd", etcdCfg); err != nil {
-		panic(fmt.Sprintf("unmarshal etcd config fail, err msg %s", err.Error()))
-	}
-	etcd := etcd.New(etcdCfg)
-	resolver.Register(etcd)
-
 	dao := dao.New()
 	s := service.New(dao)
-	http := http.New(s)
-	rpc := grpc.New(s)
-
-	etcd.Register(context.Background(), rpc.ServiceInfo)
-	etcd.Register(context.Background(), http.ServiceInfo)
-	si, err := stats.StartStats()
-	if err != nil {
+	if _, err := stats.StartStats(); err != nil {
 		panic(fmt.Sprintf("start stats fail, err msg is %s", err.Error()))
 	}
-	etcd.Register(context.Background(), si)
 
 	<-c
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-	etcd.Close()
-	http.Server.Stop(ctx)
-	rpc.Server.Stop(ctx)
 	s.Close()
 }
