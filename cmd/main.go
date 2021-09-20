@@ -3,10 +3,11 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/UnderTreeTech/waterdrop/pkg/log"
 	"os"
 	"os/signal"
 	"syscall"
+
+	"github.com/UnderTreeTech/waterdrop/pkg/log"
 
 	"beats/internal/dao"
 	"beats/internal/service"
