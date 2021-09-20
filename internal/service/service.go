@@ -5,15 +5,17 @@ import (
 )
 
 type Service struct {
-	dao  dao.Dao
+	dao dao.Dao
 }
 
 func New(d dao.Dao) *Service {
 	svc := &Service{
-		dao:  d,
+		dao: d,
 	}
-	go svc.ConsumeBeats()
-
+	for i := 0; i < 20; i++ {
+		go svc.ConsumeBeats()
+	}
+	go svc.CreateIndex()
 	return svc
 }
 
